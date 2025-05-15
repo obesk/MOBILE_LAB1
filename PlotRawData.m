@@ -16,7 +16,7 @@
 
 %function PlotRawData
 
-%clear;
+clear;
 close all;
 clc;
 
@@ -52,7 +52,7 @@ for i = 2 : nbLoops
     U(:,i) = jointToCartesian * deltaq ;  % joint speed to Cartesian speed.
        
     % Predic state (here odometry)
-    Xodo(:,i) = EvolutionModel_a( Xodo(:,i-1) , U(:,i) ) ;
+    Xodo(:,i) = EvolutionModel( Xodo(:,i-1) , U(:,i) ) ;
     
 end
 
