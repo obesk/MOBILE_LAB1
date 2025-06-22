@@ -47,28 +47,33 @@ LogData( 0 , 'init' , X , P , [0;0] ) ;
 
 [nbLoops,t,qL,qR,sensorReadings] = PreprocessData(data, dots2rad, dumbFactor, subSamplingFactor ) ;
 
-wbHandle = waitbar(0,'Computing...') ;
+%wbHandle = waitbar(0,'Computing...') ;
 
 for i = 2 : nbLoops 
     
     t = (i-1)*samplingPeriod ;
     
-    waitbar(i/nbLoops) ;
+    %waitbar(i/nbLoops) ;
 
     % Calculate input vector from proprioceptive sensors
     deltaq = [ qR(i) - qR(i-1) ; 
-               qL(i) - qL(i-1) ] ;
+               qL(i) - qL(i-1) ] ; % this contains the difference in the rotation of the right and left wheel
     U = jointToCartesian * deltaq ;  % joint speed to Cartesian speed.
     
     % Predic state (here odometry)
     X = EvolutionModel( X , U ) ;
     
     % Calculate linear approximation of the system equation
-    A = [ *** ] ;
-    B = [ *** ] ;
+    A = [ 1 0 -U(1)*sin(X(3));
+          0 1 U(1)*cos(X(3));
+          0 0 1];
+
+    B = [ cos(X(3)) 0;
+          sin(X(3)) 0;
+          0         1] ;
        
     % Error propagation
-    P = A*P*(A.') + B*Qbeta*(B.') + Qalpha ;
+    P = A*P*(A.') + B*Qbeta*(B.') + Qalpha;
     
     LogData( t , 'prediction' , X , P , U , [0;0] ) ;
     
@@ -83,7 +88,9 @@ for i = 2 : nbLoops
     for measNumber = 1 : length(measures) 
         
         % Homogeneous transform of robot frame with respect to world frame
-        oTm = [ *** ] ;
+        oTm = [ cos(X(3)) -sin(X(3)) X(1);
+                sin(X(3)) cos(X(3))  X(2);
+                0         0          1] ;
         mTo = inv(oTm) ;
         
         % Measurement vector: coordinates of the magnet in Rm.
@@ -105,19 +112,20 @@ for i = 2 : nbLoops
 
         % The position of the real magnet in robot frame. It will in general 
         % be different from the measured one. 
-        mRealMagnet = oTm \ oRealMagnet ;  % That's inv(oTm)*oRealMagnet = mTo*oRealMagnet
+             = oTm \ oRealMagnet ;  % That's inv(oTm)*oRealMagnet = mTo*oRealMagnet
         
         % The expected measurement are the two coordinates of the real 
         % magnet in the robot frame.
         Yhat = mRealMagnet(1:2) ;
-        
-        C = [ *** ] ;
-                      
+  
+        C = [ -cos(X(3)) , -sin(X(3)) , -sin(X(3))*(oRealMagnet(1)-X(1))+cos(X(3))*(oRealMagnet(2)-X(2)) ;
+               sin(X(3)) , -cos(X(3)) , -sin(X(3))*(oRealMagnet(2)-X(2))-cos(X(3))*(oRealMagnet(1)-X(1)) ] ;
+
         innov = Y - Yhat ;   
         dMaha = sqrt( innov.' * inv( C*P*C.' + Qgamma) * innov ) ;
-        
+
         LogData( t , 'measurement' , X , P , [0;0] , Y ) ;
-        
+
         if dMaha <= mahaThreshold
             K = P * C.' * inv( C*P*C.' + Qgamma) ;
             X = X + K*innov ;
@@ -140,4 +148,4 @@ save inputLog ...
 
  
 LogData( t , 'termination' , X , P , [0;0] , [0;0] ) ;
-close(wbHandle) ;
+%close(wbHandle) ;

@@ -3,28 +3,27 @@
 
 % Uncertainty on initial position of the robot.
 
-sigmaX     = *** ;         % Determined by student
-sigmaY     = *** ;         % Determined by student
-sigmaTheta = *** ;   % Determined by student
+% errors due to the size of the magnet magnetic field
+sigmaX     = 5 ;         % Determined by student 
+sigmaY     = 5 ;         % Determined by student
+sigmaTheta =  deg2rad(5);   % Determined by student %erro in placing the car
 Pinit = diag( [sigmaX^2 sigmaY^2 sigmaTheta^2] ) ;
 
 % Measurement noise.
-
-sigmaXmeasurement = *** ;  % Determined by student
-sigmaYmeasurement = *** ;  % Determined by student
+sigmaXmeasurement = sqrt(20^2/12) ;  % Determined by student
+sigmaYmeasurement = sqrt(20^2/12) ;  % Determined by student
 Qgamma = diag( [sigmaXmeasurement^2 sigmaYmeasurement^2] ) ;
 
 
 % Input noise
-
-sigmaTuning = *** ; 
+sigmaTuning = 0.12; 
 Qwheels = sigmaTuning^2 * eye(2) ;
 Qbeta   = jointToCartesian * Qwheels * jointToCartesian.' ; 
 
 % State noise
- 
+%TODO: ask professor 
 Qalpha = zeros(3) ;
 
 % Mahalanobis distance threshold
 
-mahaThreshold = *** ;  % Determined by student
+mahaThreshold =  sqrt(chi2inv(0.95, 2));  % Determined by student
